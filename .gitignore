@@ -250,3 +250,8 @@ paket-files/
 # JetBrains Rider
 .idea/
 *.sln.iml
+/Vehicles_Neuron_Configurator.vcxproj
+/Vehicles_Neuron_Configurator.vcxproj.filters
+/data/ShareTechMono-Regular.ttf
+/data/NotoMono-Regular.ttf
+/data/DS-DIGI.TTF
