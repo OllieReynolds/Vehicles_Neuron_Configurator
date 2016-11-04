@@ -22,7 +22,8 @@ struct Glyph {
 
 class Text {
 public:
-	Text(int pixel_size = 24, const std::string& font = "", const vec4& colour = 0.f) : pixel_size(pixel_size), font(font), colour(colour) {
+	Text(int pixel_size = 24, const std::string& font = "", const vec4& colour = 0.f) : pixel_size(pixel_size), font(font), colour(colour) 
+	{
 	}
 
 	void init_text();

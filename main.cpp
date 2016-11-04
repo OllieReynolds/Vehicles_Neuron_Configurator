@@ -150,8 +150,8 @@ int main() {
 
 
 	Instance i = {
-		DrawBezier(Transform(), 0.f),
-		DrawVehicle(Transform(384.f,{256.f, 512.f}, 0.f), vec4{0.461757f, 0.554109f, 0.692636f, 1.f}),
+		DrawBezier(Transform{}, 0.f),
+		DrawVehicle(Transform{384.f, {256.f, 512.f}, 0.f}, vec4{0.461757f, 0.554109f, 0.692636f, 1.f}),
 		UI()
 	};
 

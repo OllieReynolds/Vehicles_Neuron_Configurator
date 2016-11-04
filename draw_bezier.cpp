@@ -117,6 +117,7 @@ void DrawBezier::draw() {
 	};
 
 	glLineWidth(8.f);
+	
 
 	shader.use();
 	shader.set_uniform("projection", orthographic_matrix({768.f, 768.f}, -1.f, 1.f, mat4()));
