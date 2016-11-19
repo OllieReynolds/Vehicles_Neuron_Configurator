@@ -11,18 +11,28 @@
 
 #include "draw_bezier.h"
 #include "draw_vehicle.h"
+#include "texture.h"
 #include "ui.h"
 
 namespace {
 	struct Instance {
 		DrawBezier db;
 		DrawVehicle dv;
+		Texture tex;
 		UI ui;
+
+		GLuint frame_buffer;
 
 		void init() {
 			db.init();
 			dv.init();
 			ui.init();
+
+			tex.init();
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 768, 768, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+			glGenFramebuffers(1, &frame_buffer);
+			glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex.gl_tex, 0);
 		}
 
 		void update() {
@@ -31,21 +41,10 @@ namespace {
 
 			std::vector<String_Instance> ui_elements;
 			switch (db.wire_config) {
-			case 0:
-				ui_elements.push_back(String_Instance{"LL         RR",{384.f, 700.f}});
-				break;
-
-			case 1:
-				ui_elements.push_back(String_Instance{"LR         RL",{384.f, 700.f}});
-				break;
-
-			case 2:
-				ui_elements.push_back(String_Instance{"LL         RL",{384.f, 700.f}});
-				break;
-
-			case 3:
-				ui_elements.push_back(String_Instance{"LR         RR",{384.f, 700.f}});
-				break;
+			case 0: ui_elements.push_back(String_Instance{"LL         RR",{384.f, 700.f}}); break;
+			case 1: ui_elements.push_back(String_Instance{"LR         RL",{384.f, 700.f}}); break;
+			case 2: ui_elements.push_back(String_Instance{"LL         RL",{384.f, 700.f}}); break;
+			case 3: ui_elements.push_back(String_Instance{"LR         RR",{384.f, 700.f}});	break;
 			}
 
 			ui_elements.push_back(String_Instance{" Left weight: " + utils::friendly_float(db.left_weight) + "        Left wheel: " + utils::friendly_float(db.lwheel),{384.f, 30.f}});
@@ -55,15 +54,19 @@ namespace {
 		}
 
 		void draw() {
+			glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer); glClearColor(0.f, 0.f, 0.f, 1.f); glClear(GL_COLOR_BUFFER_BIT);
 			db.draw();
 			dv.draw();
 			ui.draw();
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			tex.draw();
 		}
 
 		void destroy() {
 			db.destroy();
 			dv.destroy();
 			ui.destroy();
+			tex.destroy();
 		}
 	};
 
@@ -82,26 +85,11 @@ namespace {
 				break;
 			}
 		}
-		/*if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
-			Instance* i = reinterpret_cast<Instance*>(glfwGetWindowUserPointer(window));			
-
-			if (--i->db.wire_config < 0)
-				i->db.wire_config = 3;
-
-			std::cout << "Config: " << i->db.wire_config << std::endl;
-		}
-		else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
-			Instance* i = reinterpret_cast<Instance*>(glfwGetWindowUserPointer(window));
-			
-			i->db.wire_config = abs((i->db.wire_config + 1) % 4);
-
-			std::cout << "Config: " << i->db.wire_config << std::endl;
-		}	*/
 	}
 }
 
 int main() {
-	// GLFW
+	// GLFW init
 	if (!glfwInit()) {
 		std::cout << "GLFW failed to initialise" << std::endl;
 		return 1;
@@ -113,6 +101,7 @@ int main() {
 
 	GLFWwindow* window = glfwCreateWindow(768, 768, "Vehicles", NULL, NULL);
 
+	// GLFW window
 	if (!window) {
 		glfwTerminate();
 		std::cout << "GFLW failed to create window" << std::endl;
@@ -122,7 +111,7 @@ int main() {
 	glfwMakeContextCurrent(window);
 	glfwSetKeyCallback(window, key_callback);
 		
-	// Glew
+	// GLEW init
 	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK) {
 		glfwTerminate();
@@ -130,8 +119,7 @@ int main() {
 		return 1;
 	}
 
-#ifdef _DEBUG
-	{ // Check everything initialised correctly
+	{ // Display config
 		std::stringstream ss;
 		ss << "Device Vendor: " << glGetString(GL_VENDOR) << std::endl;
 		ss << "Device Renderer: " << glGetString(GL_RENDERER) << std::endl;
@@ -139,30 +127,30 @@ int main() {
 		ss << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 		std::cout << ss.str() << std::endl;
 	}
-#endif
 
 	glEnable(GL_BLEND);
 	glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+
 	glEnable(GL_LINE_SMOOTH);
 	glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
-	glClearColor(0.f, 0.f, 0.f, 1.f);
-
+	
 
 	Instance i = {
 		DrawBezier(Transform{}, 0.f),
 		DrawVehicle(Transform{384.f, {256.f, 512.f}, 0.f}, vec4{0.461757f, 0.554109f, 0.692636f, 1.f}),
+		Texture(Transform{384.f, {192.f, 192.f}, 0.f}, 0.f),
 		UI()
 	};
 
-
 	i.init();
-
+	
 	glfwSetWindowUserPointer(window, &i);
 
 	while (!glfwWindowShouldClose(window)) {
+		glClearColor(0.f, 0.f, 0.f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT);
-			
+
 		i.update();
 		i.draw();
 
